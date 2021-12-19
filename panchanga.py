@@ -77,12 +77,12 @@ jd_to_gregorian = lambda jd: swe.revjul(jd, swe.GREG_CAL)   # returns (y, m, d, 
 
 def solar_longitude(jd):
   """Solar longitude at given instant (julian day) jd"""
-  data = swe.calc_ut(jd, swe.SUN, flag = swe.FLG_SWIEPH)
+  data, _ = swe.calc_ut(jd, swe.SUN, flag = swe.FLG_SWIEPH)
   return data[0]   # in degrees
 
 def lunar_longitude(jd):
   """Lunar longitude at given instant (julian day) jd"""
-  data = swe.calc_ut(jd, swe.MOON, flag = swe.FLG_SWIEPH)
+  data, _ = swe.calc_ut(jd, swe.MOON, flag = swe.FLG_SWIEPH)
   return data[0]   # in degrees
 
 def lunar_latitude(jd):
@@ -112,7 +112,7 @@ def moonrise(jd, place):
   result = swe.rise_trans(jd - tz/24, swe.MOON, lon, lat, rsmi=swe.BIT_DISC_CENTER + swe.CALC_RISE)
   rise = result[1][0]  # julian-day number
   # Convert to local time
-  return to_dms((rise - jd) * 24 + tz)
+  return [rise + tz/24., to_dms((rise - jd) * 24 + tz)]
 
 def moonset(jd, place):
   """Moonset when centre of disc is at horizon for given date and place"""
@@ -120,7 +120,7 @@ def moonset(jd, place):
   result = swe.rise_trans(jd - tz/24, swe.MOON, lon, lat, rsmi=swe.BIT_DISC_CENTER + swe.CALC_SET)
   setting = result[1][0]  # julian-day number
   # Convert to local time
-  return to_dms((setting - jd) * 24 + tz)
+  return [setting + tz/24., to_dms((setting - jd) * 24 + tz)]
 
 # Tithi doesn't depend on Ayanamsa
 def tithi(jd, place):

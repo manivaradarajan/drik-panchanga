@@ -1,7 +1,7 @@
 import datetime
 import json
 import pytz
-import swisseph as swe
+import sys
 import tzlocal
 
 import panchanga
@@ -55,16 +55,28 @@ def moonset(time, place):
 def tithi(time, place):
     jd = panchanga.gregorian_to_jd(time)
     answer = panchanga.tithi(jd, place)
-    t = answer[0]
-    end = answer[1]
-    # TODO: handle leap tithis
-    return t, _panchanga_endtime_to_datetime(end, time)
+    t = []
+    i = 0
+    while i < len(answer):
+        the_tithi = answer[i]
+        end = _panchanga_endtime_to_datetime(answer[i+1], time)
+        t += [[the_tithi, end]]
+        i += 2
+    return t 
 
 
 def nakshatra(time, place):
     jd = panchanga.gregorian_to_jd(time)
-    n, end = panchanga.nakshatra(jd, place)
-    return n, _panchanga_endtime_to_datetime(end, time)
+    answer = panchanga.nakshatra(jd, place)
+    n = []
+    i = 0
+    while i < len(answer):
+        the_nakshatra = answer[i]
+        end = _panchanga_endtime_to_datetime(answer[i+1], time)
+        n += [[the_nakshatra, end]]
+        i += 2
+
+    return n
 
 
 def vaara(time):
@@ -96,29 +108,40 @@ def raasi(time):
 
 
 if __name__ == "__main__":
+    city_name = sys.argv[1]
+    ymd = datetime.datetime.strptime(sys.argv[2], '%Y%m%d')
+    # Use mid-day.
+    ymd = ymd.replace(hour=12)
+
     f = open("sanskrit_names.json")
     names = json.load(f)
 
-    local_tz = tzlocal.get_localzone()
-    # print(local_tz)
-    now = datetime.datetime.now(local_tz)  # - datetime.timedelta(days=30*8)
-    print("Calculating for", now)
-    tz_offset = local_tz.utcoffset(now).total_seconds() / 60 / 60
-    palo_alto = panchanga.Place(37.468319, -122.143936, tz_offset)
+    c = open('cities.json')
+    cities = json.load(c)
 
-    print("Samvatsara", names["samvats"][str(samvatsara(now, palo_alto))])
-    m = maasa(now, palo_alto)
+    the_city = cities[city_name]
+    timezone = pytz.timezone(the_city['timezone'])
+    ymd_tz = timezone.localize(ymd)
+
+    now = ymd_tz
+    print(city_name, "at", ymd_tz)
+    tz_offset = timezone.utcoffset(datetime.datetime.utcnow()).seconds / 60 / 60
+    place = panchanga.Place(the_city['latitude'], the_city['longitude'], tz_offset)
+
+    print("Samvatsara", names["samvats"][str(samvatsara(now, place))])
+    print("Ritu", names["ritus"][str(ritu(now, place))])
+    m = maasa(now, place)
     print("Maasa", names["masas"][str(m[0])], "adhika" if m[1] else "")
-    print("Ritu", names["ritus"][str(ritu(now, palo_alto))])
-    t = tithi(now, palo_alto)
-    print("Tithi", names["tithis"][str(t[0])], "ends", t[1])
+    print("Raasi", names["raasis"][str(raasi(now))])
+    tithis = tithi(now, place)
+    for t in tithis:
+        print("Tithi", names["tithis"][str(t[0])], "ends", t[1])
     print("Vaara", names["varas"][str(vaara(now))])
-    n = nakshatra(now, palo_alto)
-    print("Nakshatra", names["nakshatras"][str(n[0])], "ends", n[1])
-    r = raasi(now)
-    print("Raasi", names["raasis"][str(r)])
+    nakshatras = nakshatra(now, place)
+    for n in nakshatras:
+        print("Nakshatra", names["nakshatras"][str(n[0])], "ends", n[1])
 
-    print("Sunrise", sunrise(now, palo_alto))
-    print("Sunset", sunset(now, palo_alto))
-    # print("Moonrise", moonrise(now, palo_alto))
-    # print("Moonset", moonset(now, palo_alto))
+    print("Sunrise", sunrise(now, place))
+    print("Sunset", sunset(now, place))
+    # print("Moonrise", moonrise(now, place))
+    # print("Moonset", moonset(now, place))

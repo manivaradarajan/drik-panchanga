@@ -107,6 +107,15 @@ def raasi(time):
     return panchanga.raasi(jd) - 1
 
 
+def solar_month(time, place):
+    jd = panchanga.gregorian_to_jd(time)
+    ti = panchanga.tithi(jd, place)[0]
+    critical = panchanga.sunrise(jd, place)[0]  # - tz/24 ?
+    last_new_moon = panchanga.new_moon(critical, ti, -1)
+    this_solar_month = panchanga.raasi(last_new_moon)
+    return this_solar_month
+
+
 if __name__ == "__main__":
     city_name = sys.argv[1]
     ymd = datetime.datetime.strptime(sys.argv[2], '%Y%m%d')
@@ -132,6 +141,7 @@ if __name__ == "__main__":
     print("Ritu", names["ritus"][str(ritu(now, place))])
     m = maasa(now, place)
     print("Maasa", names["masas"][str(m[0])], "adhika" if m[1] else "")
+    print("Solar month", names["raasis"][str(solar_month(now, place))])
     print("Raasi", names["raasis"][str(raasi(now))])
     tithis = tithi(now, place)
     for t in tithis:

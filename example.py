@@ -1,4 +1,5 @@
 import datetime
+import json
 import pytz
 import swisseph as swe
 import tzlocal
@@ -53,7 +54,10 @@ def moonset(time, place):
 
 def tithi(time, place):
     jd = panchanga.gregorian_to_jd(time)
-    t, end = panchanga.tithi(jd, place)
+    answer = panchanga.tithi(jd, place)
+    t = answer[0]
+    end = answer[1]
+    # TODO: handle leap tithis
     return t, _panchanga_endtime_to_datetime(end, time)
 
 
@@ -87,31 +91,37 @@ def ritu(time, place):
 
 def raasi(time):
     jd = panchanga.gregorian_to_jd(time)
-    return panchanga.raasi(jd)
+    # For some reason, raasi is 1-based and not 0-based.
+    return panchanga.raasi(jd) - 1
 
 
 if __name__ == "__main__":
+    f = open('sanskrit_names.json')
+    names = json.load(f)
+
     local_tz = tzlocal.get_localzone()
     #print(local_tz)
-    now = datetime.datetime.now(local_tz) # + datetime.timedelta(days=-5)
+    now = datetime.datetime.now(local_tz) #- datetime.timedelta(days=30*8)
     print("Calculating for", now)
     tz_offset = local_tz.utcoffset(now).total_seconds()/60/60
     palo_alto = panchanga.Place(37.468319, -122.143936, tz_offset)
 
-    print("Samvatsara", samvatsara(now, palo_alto))
-    print("Maasa", maasa(now, palo_alto))
-    print("Ritu", ritu(now, palo_alto))
+    print("Samvatsara", names['samvats'][str(samvatsara(now, palo_alto))])
+    m = maasa(now, palo_alto)
+    print("Maasa", names['masas'][str(m[0])], 'adhika' if m[1] else '')
+    print("Ritu", names['ritus'][str(ritu(now, palo_alto))])
     t = tithi(now, palo_alto)
-    print("Tithi", t[0], t[1])
+    print("Tithi", names['tithis'][str(t[0])], 'ends', t[1])
+    print("Vaara", names['varas'][str(vaara(now))])
     n = nakshatra(now, palo_alto)
-    print("Vaara", vaara(now))
-    print("Nakshatra", n[0], n[1])
-    print("Raasi", raasi(now))
+    print("Nakshatra", names['nakshatras'][str(n[0])], 'ends', n[1])
+    r = raasi(now)
+    print("Raasi", names['raasis'][str(r)])
 
     print("Sunrise", sunrise(now, palo_alto))
     print("Sunset", sunset(now, palo_alto))
-    print("Moonrise", moonrise(now, palo_alto))
-    print("Moonset", moonset(now, palo_alto))
+    #print("Moonrise", moonrise(now, palo_alto))
+    #print("Moonset", moonset(now, palo_alto))
 
 
 

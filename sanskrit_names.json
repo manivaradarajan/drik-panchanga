@@ -247,5 +247,20 @@
             "3": "Śarad",
             "4": "Hemanta",
             "5": "Śiśira"
-           }
+           },
+
+"raasis":   {           
+    "0": "Mesha",
+    "1": "Vrishabha",
+    "2": "Mithuna",
+    "3": "Karka",
+    "4": "Simha",
+    "5": "Kanya",
+    "6": "Tula",
+    "7": "Vrischika",
+    "8": "Dhanur",
+    "9": "Makara",
+    "10": "Kumbha",
+    "11": "Meena"
+  }
 }

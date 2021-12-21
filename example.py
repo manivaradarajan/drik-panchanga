@@ -6,6 +6,11 @@ import tzlocal
 
 import panchanga
 
+# TODO: rename
+names = None
+with open("sanskrit_names.json") as f:
+    names = json.load(f)
+
 
 def _panchanga_date_to_datetime(date, base_datetime):
     # The input date and time elements in the tuple are expressed as floats.
@@ -114,6 +119,62 @@ def solar_month(time, place):
     last_new_moon = panchanga.new_moon(critical, ti, -1)
     this_solar_month = panchanga.raasi(last_new_moon)
     return this_solar_month
+
+
+def basic_panchangam(ymd_str, latitude, longitude, timezone_str):
+    # TODO: validate arguments
+
+    ymd = datetime.datetime.strptime(ymd_str, '%Y%m%d')
+    # Use mid-day.
+    ymd = ymd.replace(hour=12)
+
+    timezone = pytz.timezone(timezone_str)
+    ymd_tz = timezone.localize(ymd)
+
+    now = ymd_tz
+    tz_offset = timezone.utcoffset(datetime.datetime.utcnow()).seconds / 60 / 60
+    place = panchanga.Place(latitude, longitude, tz_offset)
+
+    data = {}
+    data['latitude'] = latitude
+    data['longitude'] = longitude
+    data['date'] = ymd_tz
+    data['samvatsara'] = names["samvats"][str(samvatsara(now, place))]
+    data['ritu'] = names["ritus"][str(ritu(now, place))]
+
+    m = maasa(now, place)
+    the_maasa = {}
+    the_maasa['name'] = names['masas'][str(m[0])]
+    the_maasa['adhika'] = m[1]
+    data['lunar_month'] = the_maasa
+
+    data['solar_month'] = names["raasis"][str(solar_month(now, place))]
+    data['raasi'] = names["raasis"][str(raasi(now))]
+
+    the_tithis = []
+    tithis = tithi(now, place)
+    for t in tithis:
+        tt = {}
+        tt['name'] = names["tithis"][str(t[0])]
+        tt['end'] = t[1]
+        the_tithis.append(tt)
+    data['tithis'] = the_tithis
+
+    data['vaara'] = names["varas"][str(vaara(now))]
+
+    the_nakshatras = []
+    nakshatras = nakshatra(now, place)
+    for n in nakshatras:
+        nn = {}
+        nn['name'] = names["nakshatras"][str(n[0])]
+        nn['end'] = n[1]
+        the_nakshatras.append(nn)
+    data['nakshatras'] = the_nakshatras
+
+    data['sunrise'] = sunrise(now, place)
+    data['sunset'] = sunset(now, place)
+    return data
+
 
 
 if __name__ == "__main__":
